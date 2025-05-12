@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trình phát nhạc ngẫu nhiên 6 phần</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            background-color: #f4f6f8;
+            color: #333;
+            padding: 15px;
+            box-sizing: border-box;
+        }
+        .container {
+            background-color: white;
+            padding: 25px 30px;
+            border-radius: 12px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            text-align: center;
+            max-width: 600px;
+            width: 100%;
+        }
+        h1 {
+            color: #007bff; /* Hoặc màu bạn thích */
+            margin-bottom: 25px;
+            font-size: 1.8em;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 1em;
+            margin: 8px 4px;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: background-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+            font-weight: 500;
+        }
+        button:hover {
+            background-color: #0056b3;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+        }
+        button:disabled {
+            background-color: #e0e0e0;
+            color: #a0a0a0;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+        #status {
+            margin-top: 20px;
+            font-style: italic;
+            color: #5f6368;
+            min-height: 20px;
+        }
+        #nowPlayingContainer {
+            margin-top: 20px;
+            text-align: left;
+            border: 1px solid #dadce0;
+            padding: 15px;
+            border-radius: 8px;
+            background-color: #f8f9fa;
+            min-height: 100px;
+        }
+        #nowPlayingContainer h3 {
+            margin-top: 0;
+            margin-bottom: 10px;
+            color: #007bff;
+            font-size: 1.1em;
+        }
+        .part-info {
+            margin-bottom: 6px;
+            font-size: 0.9em;
+            color: #3c4043;
+            word-break: break-all;
+        }
+        .part-info strong {
+            color: #007bff;
+        }
+        .part-info .file-url { /* Mặc dù giờ là đường dẫn tương đối, vẫn giữ class này nếu bạn muốn style khác */
+            font-size: 0.8em;
+            color: #5f6368;
+            margin-left: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Trình Phát Nhạc Ngẫu Nhiên</h1>
+        <p style="font-size:0.9em; color: #5f6368; margin-top:-15px; margin-bottom:20px;">
+            Phát 6 phần, mỗi phần chọn ngẫu nhiên 1 file âm thanh.
+        </p>
+        <button id="playButton">Play <span role="img" aria-label="play icon">▶️</span></button>
+        <button id="stopButton" disabled>Stop <span role="img" aria-label="stop icon">⏹️</span></button>
+        <div id="status">Nhấn Play để bắt đầu.</div>
+        <div id="nowPlayingContainer">
+            <h3>Đang chờ phát...</h3>
+            <div id="nowPlaying">
+                <!-- Thông tin file đang phát sẽ hiển thị ở đây -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- CẤU HÌNH fileLists VỚI ĐƯỜNG DẪN TƯƠNG ĐỐI ---
+        // Đảm bảo tên thư mục và tên file khớp với cấu trúc dự án của bạn
+        const fileLists = {
+          phn1: [ // Key 'phn1' sẽ được dùng để truy cập
+            "Phần 1/1.mp3", "Phần 1/2.mp3", "Phần 1/3.mp3", "Phần 1/4.mp3",
+            "Phần 1/5.mp3", "Phần 1/6.mp3", "Phần 1/7.mp3", "Phần 1/8.mp3",
+            "Phần 1/9.mp3", "Phần 1/10.mp3", "Phần 1/11.mp3", "Phần 1/12.mp3"
+          ],
+          phn2: [
+            "Phần 2/1.mp3", "Phần 2/2.mp3", "Phần 2/3.mp3", "Phần 2/4.mp3",
+            "Phần 2/5.mp3", "Phần 2/6.mp3", "Phần 2/7.mp3", "Phần 2/8.mp3",
+            "Phần 2/9.mp3", "Phần 2/10.mp3", "Phần 2/11.mp3", "Phần 2/12.mp3"
+          ],
+          phn3: [
+            "Phần 3/1.mp3", "Phần 3/2.mp3", "Phần 3/3.mp3", "Phần 3/4.mp3",
+            "Phần 3/5.mp3", "Phần 3/6.mp3", "Phần 3/7.mp3", "Phần 3/8.mp3",
+            "Phần 3/9.mp3", "Phần 3/10.mp3", "Phần 3/11.mp3", "Phần 3/12.mp3"
+          ],
+          phn4: [
+            "Phần 4/1.mp3", "Phần 4/2.mp3", "Phần 4/3.mp3", "Phần 4/4.mp3",
+            "Phần 4/5.mp3", "Phần 4/6.mp3", "Phần 4/7.mp3", "Phần 4/8.mp3",
+            "Phần 4/9.mp3", "Phần 4/10.mp3", "Phần 4/11.mp3", "Phần 4/12.mp3"
+          ],
+          phn5: [
+            "Phần 5/1.mp3", "Phần 5/2.mp3", "Phần 5/3.mp3", "Phần 5/4.mp3",
+            "Phần 5/5.mp3", "Phần 5/6.mp3", "Phần 5/7.mp3", "Phần 5/8.mp3",
+            "Phần 5/9.mp3", "Phần 5/10.mp3", "Phần 5/11.mp3", "Phần 5/12.mp3"
+          ],
+          phn6: [
+            "Phần 6/1.mp3", "Phần 6/2.mp3", "Phần 6/3.mp3", "Phần 6/4.mp3",
+            "Phần 6/5.mp3", "Phần 6/6.mp3", "Phần 6/7.mp3", "Phần 6/8.mp3",
+            "Phần 6/9.mp3", "Phần 6/10.mp3", "Phần 6/11.mp3", "Phần 6/12.mp3"
+          ]
+        };
+        // --- KẾT THÚC CẤU HÌNH fileLists ---
+
+        const numberOfPartsToPlay = 6; // Số phần bạn muốn phát
+
+        let audioContext;
+        let sourceNodes = []; 
+        let buffersStore = {}; 
+        let currentSequenceInfo = []; 
+        let isPlaying = false;
+        let globalGainNode; 
+
+        const playButton = document.getElementById('playButton');
+        const stopButton = document.getElementById('stopButton');
+        const statusDiv = document.getElementById('status');
+        const nowPlayingDiv = document.getElementById('nowPlaying');
+        const nowPlayingContainerTitle = document.querySelector('#nowPlayingContainer h3');
+
+        function getRandomFileUrl(fileArray) {
+            if (!Array.isArray(fileArray) || fileArray.length === 0) return null;
+            const randomIndex = Math.floor(Math.random() * fileArray.length);
+            return fileArray[randomIndex];
+        }
+
+        async function loadAudio(url, partNameForError) {
+            if (!audioContext) { 
+                try {
+                    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    globalGainNode = audioContext.createGain(); 
+                    globalGainNode.connect(audioContext.destination); 
+                } catch (e) {
+                    alert('Web Audio API không được hỗ trợ trong trình duyệt này.');
+                    throw e; 
+                }
+            }
+            if (audioContext.state === 'suspended') {
+                await audioContext.resume();
+            }
+
+            if (buffersStore[url]) {
+                return buffersStore[url];
+            }
+
+            const response = await fetch(url);
+            if (!response.ok) { // Kiểm tra xem fetch có thành công không (ví dụ: lỗi 404)
+                throw new Error(`Không thể tải file: ${url} (Status: ${response.status}) cho ${partNameForError}. Kiểm tra đường dẫn và file có tồn tại trên server không.`);
+            }
+            const arrayBuffer = await response.arrayBuffer();
+            try {
+                const decodedBuffer = await audioContext.decodeAudioData(arrayBuffer);
+                buffersStore[url] = decodedBuffer; 
+                return decodedBuffer;
+            } catch (decodeError) {
+                 throw new Error(`Lỗi giải mã file ${url} cho ${partNameForError}: ${decodeError.message}`);
+            }
+        }
+
+        function stopAllSounds() {
+            sourceNodes.forEach(source => {
+                try { if (source) source.stop(0); } catch (e) { /* ignore */ }
+            });
+            sourceNodes = [];
+            
+            isPlaying = false;
+            playButton.disabled = false;
+            stopButton.disabled = true;
+            if (nowPlayingContainerTitle) nowPlayingContainerTitle.textContent = "Đã dừng.";
+            statusDiv.textContent = "Đã dừng. Nhấn Play để bắt đầu lại.";
+        }
+
+        playButton.addEventListener('click', async () => {
+            if (isPlaying) return; 
+
+            if (sourceNodes.length > 0) {
+                stopAllSounds();
+            }
+
+            playButton.disabled = true;
+            stopButton.disabled = false;
+            statusDiv.textContent = 'Đang chuẩn bị danh sách phát...';
+            if (nowPlayingContainerTitle) nowPlayingContainerTitle.textContent = "Đang tải...";
+            nowPlayingDiv.innerHTML = ""; 
+
+            currentSequenceInfo = []; 
+            const partKeys = Object.keys(fileLists); 
+
+            for (let i = 0; i < numberOfPartsToPlay; i++) {
+                if (i >= partKeys.length) break; 
+
+                const currentPartKey = partKeys[i]; 
+                const filesForThisPart = fileLists[currentPartKey];
+
+                if (!Array.isArray(filesForThisPart) || filesForThisPart.length === 0) {
+                    statusDiv.textContent = `Lỗi: Không có file nào được định nghĩa cho '${currentPartKey}' trong fileLists.`;
+                    playButton.disabled = false; stopButton.disabled = true; return;
+                }
+
+                const randomFileUrl = getRandomFileUrl(filesForThisPart);
+                if (randomFileUrl && typeof randomFileUrl === 'string' && randomFileUrl.trim() !== '') {
+                    currentSequenceInfo.push({
+                        url: randomFileUrl, // Đây sẽ là đường dẫn tương đối như "Phần 1/1.mp3"
+                        partName: `Phần ${i + 1}`, 
+                        originalPartKey: currentPartKey
+                    });
+                } else {
+                    statusDiv.textContent = `Lỗi: Không chọn được file hợp lệ cho '${currentPartKey}'.`;
+                    playButton.disabled = false; stopButton.disabled = true; return;
+                }
+            }
+            
+            if (currentSequenceInfo.length === 0) {
+                statusDiv.textContent = 'Không có file nào trong danh sách phát.';
+                playButton.disabled = false; stopButton.disabled = true; return;
+            }
+
+            nowPlayingDiv.innerHTML = "<strong>Các file được chọn:</strong><br>";
+            currentSequenceInfo.forEach(info => {
+                 nowPlayingDiv.innerHTML += `<div class="part-info"><strong>${info.partName}</strong> (từ ${info.originalPartKey}): <span class="file-url">${info.url}</span></div>`;
+            });
+
+            let filesLoadedCount = 0;
+            const totalFilesToLoad = currentSequenceInfo.length;
+            let loadedBuffersForSequence = []; 
+
+            try {
+                for (const fileInfo of currentSequenceInfo) {
+                    statusDiv.textContent = `Đang tải file ${filesLoadedCount + 1}/${totalFilesToLoad} (${fileInfo.url})...`;
+                    const buffer = await loadAudio(fileInfo.url, fileInfo.partName); 
+                    loadedBuffersForSequence.push({ buffer: buffer, url: fileInfo.url, partName: fileInfo.partName, originalPartKey: fileInfo.originalPartKey });
+                    filesLoadedCount++;
+                }
+            } catch (error) {
+                console.error('Lỗi tải hoặc giải mã audio:', error);
+                statusDiv.textContent = `${error.message}. Kiểm tra console.`;
+                playButton.disabled = false; stopButton.disabled = true; return;
+            }
+
+            if (loadedBuffersForSequence.length !== totalFilesToLoad) {
+                statusDiv.textContent = 'Không tải đủ file. Không thể phát.';
+                playButton.disabled = false; stopButton.disabled = true; return;
+            }
+
+            statusDiv.textContent = 'Đang phát...';
+            if (nowPlayingContainerTitle) nowPlayingContainerTitle.textContent = "Đang phát:";
+            isPlaying = true;
+            let cumulativeDuration = 0;
+            let playbackStartTime = audioContext.currentTime; 
+
+            nowPlayingDiv.innerHTML = ""; 
+
+            loadedBuffersForSequence.forEach((bufferInfo, index) => {
+                const source = audioContext.createBufferSource();
+                source.buffer = bufferInfo.buffer;
+                source.connect(globalGainNode); 
+
+                const playAt = playbackStartTime + cumulativeDuration;
+                source.start(playAt);
+                
+                const fileDisplayElement = document.createElement('div');
+                fileDisplayElement.className = 'part-info';
+                fileDisplayElement.innerHTML = `<strong>${bufferInfo.partName}</strong> (từ ${bufferInfo.originalPartKey}): <span class="file-url">${bufferInfo.url}</span>`;
+                nowPlayingDiv.appendChild(fileDisplayElement);
+
+                cumulativeDuration += bufferInfo.buffer.duration;
+                sourceNodes.push(source); 
+
+                if (index === loadedBuffersForSequence.length - 1) {
+                    source.onended = () => {
+                        if (isPlaying) { 
+                            statusDiv.textContent = 'Đã phát xong. Nhấn Play để nghe lại.';
+                            if (nowPlayingContainerTitle) nowPlayingContainerTitle.textContent = "Đã phát xong.";
+                            isPlaying = false;
+                            playButton.disabled = false;
+                            stopButton.disabled = true;
+                        }
+                    };
+                }
+            });
+        });
+
+        stopButton.addEventListener('click', () => {
+            stopAllSounds();
+        });
+    </script>
+</body>
+</html>
